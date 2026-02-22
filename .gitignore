@@ -1,5 +1,16 @@
+# Buildozer
 .buildozer/
 bin/
+
+# Python
 __pycache__/
 *.pyc
-*.apk
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual env
+venv/
+.env
