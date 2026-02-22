@@ -31,7 +31,7 @@ fullscreen = 0
 android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
 # (list) Android features
-android.features = android.hardware.touchscreen
+# android.features = android.hardware.touchscreen
 
 # (list) Requirements
 requirements = python3,kivy,yt-dlp,requests
