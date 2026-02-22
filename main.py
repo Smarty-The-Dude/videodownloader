@@ -5,7 +5,6 @@ from kivy.uix.button import Button
 
 from kivy.uix.label import Label
 from kivy.clock import Clock
-import yt_dlp
 import threading
 import os
 
@@ -19,7 +18,11 @@ from kivymd.uix.progressbar import MDProgressBar
 from kivymd.uix.dialog import MDDialog
 from kivy.utils import get_color_from_hex
 from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.filemanager import MDFileManager
+from kivy.utils import platform
+from kivy.app import App
+
+if platform == "android":
+    from kivymd.uix.filemanager import MDFileManager
 
 
 
@@ -27,6 +30,10 @@ from kivymd.uix.filemanager import MDFileManager
 def color(hex_code):
     return get_color_from_hex(hex_code)
 
+if platform == "android":
+    LAST_PATH_FILE = None   # will be set later
+else:
+    LAST_PATH_FILE = "last_path.txt"
 
 
 
@@ -34,14 +41,25 @@ def color(hex_code):
 
 
 
-DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
-LAST_PATH_FILE = "last_path.txt"
+
+if platform == "android":
+    from android.storage import primary_external_storage_path
+    DOWNLOAD_DIR = os.path.join(primary_external_storage_path(), "Download")
+else:
+    DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
+
+
 
 
 
 class DownloaderUI(BoxLayout):
+    
     def __init__(self, **kwargs):
         super().__init__(orientation='vertical', padding=10, spacing=10, **kwargs)
+        if platform == "android":
+            self.last_path_file = os.path.join(App.get_running_app().user_data_dir, "last_path.txt")
+        else:
+            self.last_path_file = LAST_PATH_FILE
 
         self.top_label = Label(
             text="Youtube/Insta Video Downloader", bold=True,
@@ -105,9 +123,9 @@ class DownloaderUI(BoxLayout):
         if not os.path.exists(DOWNLOAD_DIR):
             os.makedirs(DOWNLOAD_DIR)
 
-        self.download_path = os.getcwd()
-        if os.path.exists(LAST_PATH_FILE):
-            with open(LAST_PATH_FILE, "r") as f:
+        self.download_path = DOWNLOAD_DIR
+        if os.path.exists(self.last_path_file):
+            with open(self.last_path_file, "r") as f:
                 self.download_path = f.read().strip()
 
 
@@ -126,13 +144,12 @@ class DownloaderUI(BoxLayout):
     def on_folder_selected(self, path):
         self.download_path = path
 
-        with open(LAST_PATH_FILE, "w") as f:
+        with open(self.last_path_file, "w") as f:
             f.write(path)
 
         self.close_file_manager()
 
-        self.status_label.text = "Downloading..."
-        threading.Thread(target=self._download_thread).start()
+       
 
     def close_file_manager(self, *args):
         self.file_manager.close()
@@ -140,7 +157,7 @@ class DownloaderUI(BoxLayout):
 
     def fetch_qualities(self, instance):
         self.status_label.text = "Fetching qualities..."
-        threading.Thread(target=self._fetch_thread).start()
+        threading.Thread(target=self._fetch_thread, daemon=True).start()
 
     def _fetch_thread(self):
         url = self.link_input.text.strip()
@@ -153,6 +170,7 @@ class DownloaderUI(BoxLayout):
         }
 
         try:
+            import yt_dlp
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
 
@@ -191,7 +209,8 @@ class DownloaderUI(BoxLayout):
 
 
     def download_video(self, instance):
-        self.choose_download_folder()
+        self.status_label.text = "Downloading..."
+        threading.Thread(target=self._download_thread, daemon=True).start()
 
     
 
@@ -212,6 +231,7 @@ class DownloaderUI(BoxLayout):
 
 
         try:
+            import yt_dlp
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
             Clock.schedule_once(lambda dt: self.on_download_complete())
@@ -232,18 +252,6 @@ class DownloaderUI(BoxLayout):
 
     
 
-        # def on_submit(instance, selection, touch):
-        #     if selection:
-        #         self.download_path = selection[0]
-        #         popup.dismiss()
-        #         self.status_label.text = "Downloading..."
-        #         threading.Thread(target=self._download_thread).start()
-
-        #         with open(LAST_PATH_FILE, "w") as f:
-        #             f.write(self.download_path)
-
-        # chooser.bind(on_submit=on_submit)
-        # popup.open()
 
 
     def progress_hook(self, d):
