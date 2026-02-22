@@ -34,7 +34,7 @@ android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 # android.features = android.hardware.touchscreen
 
 # (list) Requirements
-requirements = python3,kivy,yt-dlp,requests
+requirements = python3,kivy,kivymd,pillow,yt-dlp,requests
 
 # (str) Orientation
 orientation = portrait
